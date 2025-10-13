@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Calculator AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-6 max-w-[400px] w-full">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4 text-center">Retail Calculator AI</h1>
+        <p class="text-gray-600 mb-6 text-center text-base">Speak your calculation, like adding or multiplying numbers.
+        </p>
+        <button id="start"
+            class="w-full py-3 px-6 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition duration-300"
+            aria-label="Start voice input">Start Speaking</button>
+        <div id="input" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-base text-gray-700 fade-in"
+            aria-live="polite">Your input will appear here.</div>
+        <div id="result"
+            class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-lg font-medium text-gray-900 fade-in"
+            aria-live="polite">Summary will appear here.</div>
+        <div id="history"
+            class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 max-h-48 overflow-y-auto text-base text-gray-700 fade-in"
+            aria-label="Calculation history">History: <p>No history yet.</p>
+        </div>
+        <button id="clear"
+            class="w-full mt-4 py-3 px-6 bg-red-600 text-white text-lg font-semibold rounded-lg hover:bg-red-700 transition duration-300"
+            aria-label="Clear calculation history">Clear History</button>
+    </div>
+
+    <script>
+        const appId = 'T64K3V554Y'; // Replace with your free Wolfram|Alpha AppID (format: XXXXXX-XXXXXXXXXX) from https://developer.wolframalpha.com/
+
+        const startButton = document.getElementById('start');
+        const inputDiv = document.getElementById('input');
+        const resultDiv = document.getElementById('result');
+        const historyDiv = document.getElementById('history');
+        const clearButton = document.getElementById('clear');
+
+        let history = JSON.parse(localStorage.getItem('calcHistory')) || [];
+
+        function updateHistory() {
+            if (history.length === 0) {
+                historyDiv.innerHTML = 'History: <p>No history yet.</p>';
+            } else {
+                historyDiv.innerHTML = 'History: <ul class="space-y-2">' +
+                    history.map((item, index) =>
+                        `<li class="${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'} p-2 rounded flex justify-between">
+                            <span>${item.input}</span><span>= ${item.summary}</span>
+                        </li>`
+                    ).join('') + '</ul>';
+            }
+        }
+
+        updateHistory(); // Load initial history
+
+        clearButton.onclick = function () {
+            history = [];
+            localStorage.removeItem('calcHistory');
+            updateHistory();
+        };
+
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US'; // English for best Wolfram|Alpha compatibility
+
+            recognition.onresult = async function (event) {
+                const transcript = event.results[0][0].transcript;
+                inputDiv.textContent = 'Your input: ' + transcript;
+
+                const url = `https://www.wolframalpha.com/api/v1/llm-api?input=${encodeURIComponent(transcript.trim())}&appid=${appId}`;
+
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error('API request failed: ' + response.status);
+                    }
+                    const text = await response.text();
+
+                    // Parse response: Extract 'Result:' section
+                    const lines = text.split('\n');
+                    let summary = '';
+                    let capturingResult = false;
+                    for (let line of lines) {
+                        if (line.startsWith('Result:')) {
+                            capturingResult = true;
+                            summary += line.replace('Result:', '').trim();
+                        } else if (capturingResult && line.trim() !== '') {
+                            summary += ' ' + line.trim();
+                        } else if (capturingResult) {
+                            break;
+                        }
+                    }
+                    if (!summary) {
+                        summary = text.split('\n').find(line => line.includes('Result')) || 'Unable to parse result.';
+                    }
+
+                    const trimmedSummary = summary.trim();
+                    resultDiv.textContent = 'Summary: ' + trimmedSummary;
+
+                    // Add to history
+                    history.push({ input: transcript, summary: trimmedSummary });
+                    localStorage.setItem('calcHistory', JSON.stringify(history));
+                    updateHistory();
+
+                } catch (error) {
+                    resultDiv.textContent = 'Error: ' + error.message + '. Check AppID or try again.';
+                }
+            };
+
+            recognition.onerror = function (event) {
+                inputDiv.textContent = 'Speech error: ' + event.error;
+                resultDiv.textContent = '';
+            };
+
+            recognition.onend = function () {
+                startButton.textContent = 'Start Speaking';
+                startButton.classList.remove('pulse', 'bg-blue-800');
+                startButton.classList.add('bg-blue-600');
+            };
+
+            startButton.onclick = function () {
+                recognition.start();
+                startButton.textContent = 'Listening...';
+                startButton.classList.remove('bg-blue-600');
+                startButton.classList.add('pulse', 'bg-blue-800');
+            };
+        } else {
+            inputDiv.textContent = 'Speech recognition not supported in this browser. Try Chrome.';
+        }
+    </script>
+</body>
+
+</html>
