@@ -3,38 +3,41 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retailers Calculators - Beta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sales Assistant</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f1f5f9;
+            background: #fff;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 16px;
+            overflow-x: hidden;
         }
 
         .app-container {
             background: white;
-            border-radius: 32px;
+            border-radius: 24px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 450px;
+            max-width: 420px;
             width: 100%;
             overflow: hidden;
+            position: relative;
         }
 
         .header {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            padding: 28px 24px;
+            background: #173e87;
+            padding: 20px 20px;
             color: white;
         }
 
@@ -42,54 +45,56 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
         }
 
         .header-badge {
             background: rgba(255, 255, 255, 0.2);
-            padding: 6px 14px;
+            padding: 4px 12px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
         }
 
         .header p {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.95;
-            line-height: 1.5;
+            line-height: 1.4;
         }
 
         .workspace {
-            padding: 28px 24px;
+            padding: 20px;
             background: #f8fafc;
         }
 
         .workspace-label {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .calculation-input {
             width: 100%;
-            padding: 20px;
-            font-size: 24px;
+            padding: 16px;
+            font-size: 20px;
             font-weight: 600;
             border: 3px solid #e2e8f0;
-            border-radius: 16px;
+            border-radius: 14px;
             background: white;
             color: #1e293b;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
             transition: all 0.3s ease;
             font-family: inherit;
+            cursor: text;
         }
 
         .calculation-input:focus {
@@ -98,47 +103,64 @@
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
         }
 
+        .calculation-input.readonly {
+            cursor: pointer;
+        }
+
         .result-card {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            padding: 24px;
-            border-radius: 20px;
+            background: #173e87;
+            padding: 18px;
+            border-radius: 16px;
             color: white;
             box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
         }
 
         .result-label {
-            font-size: 13px;
+            font-size: 11px;
             opacity: 0.9;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 600;
         }
 
         .result-value {
-            font-size: 42px;
+            font-size: 32px;
             font-weight: 700;
             word-wrap: break-word;
             line-height: 1.2;
         }
 
         .actions-section {
-            padding: 24px;
+            padding: 20px;
+            position: relative;
         }
 
-        .action-grid {
+        .main-actions {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 12px;
-            margin-bottom: 16px;
+            transition: all 0.4s ease;
+        }
+
+        .main-actions.hidden {
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+            overflow: hidden;
         }
 
         .action-card {
-            padding: 20px 16px;
-            border-radius: 16px;
+            padding: 18px 14px;
+            border-radius: 14px;
             border: 2px solid #e2e8f0;
             background: white;
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: center;
+        }
+
+        .action-card:active {
+            transform: scale(0.96);
         }
 
         .action-card:hover {
@@ -147,36 +169,31 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .action-card.active {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            border-color: #1e40af;
-        }
-
-        .action-card.active .action-icon,
-        .action-card.active .action-label {
-            color: white;
-        }
-
         .action-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
+            font-size: 28px;
+            margin-bottom: 6px;
         }
 
         .action-label {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #1e293b;
         }
 
         .voice-card {
-            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-            padding: 24px;
-            border-radius: 20px;
+            background: #173e87;
+            padding: 20px;
+            border-radius: 16px;
             color: white;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
             text-align: center;
+            margin-top: 12px;
+        }
+
+        .voice-card:active {
+            transform: scale(0.98);
         }
 
         .voice-card:hover {
@@ -202,111 +219,135 @@
         }
 
         .voice-icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 12px;
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
         }
 
         .voice-title {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .voice-subtitle {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.95;
         }
 
         .voice-status {
-            margin-top: 16px;
-            padding: 16px;
+            margin-top: 12px;
+            padding: 12px;
             background: white;
-            border-radius: 16px;
-            font-size: 14px;
+            border-radius: 12px;
+            font-size: 13px;
             color: #64748b;
             text-align: center;
-            min-height: 56px;
+            min-height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .numpad-section {
-            padding: 0 24px 24px 24px;
-            background: white;
+        .calculator-section {
+            padding: 0 20px 20px 20px;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.4s ease, padding 0.4s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
         }
 
-        .numpad-section.expanded {
-            max-height: 500px;
-            padding: 24px;
+        .calculator-section.active {
+            max-height: 600px;
+            opacity: 1;
+            padding: 20px;
         }
 
-        .numpad-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #64748b;
+        .calculator-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calc-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 16px;
-            opacity: 0;
-            transition: opacity 0.3s ease 0.2s;
         }
 
-        .numpad-section.expanded .numpad-label {
-            opacity: 1;
+        .close-calc-btn {
+            background: #fee2e2;
+            color: #dc2626;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-weight: 700;
         }
 
-        .numpad-grid {
+        .close-calc-btn:active {
+            transform: scale(0.9);
+        }
+
+        .calc-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: opacity 0.3s ease 0.2s, transform 0.3s ease 0.2s;
         }
 
-        .numpad-section.expanded .numpad-grid {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .num-btn {
-            padding: 18px;
+        .calc-btn {
+            border: none;
+            border-radius: 12px;
             font-size: 20px;
             font-weight: 600;
-            border: 2px solid #e2e8f0;
-            border-radius: 14px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: white;
+            transition: all 0.15s ease;
+            background: #f1f5f9;
             color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+            min-height: 60px;
         }
 
-        .num-btn:hover {
-            border-color: #3b82f6;
-            background: #f0f9ff;
-            transform: translateY(-2px);
+        .calc-btn:active {
+            transform: scale(0.95);
         }
 
-        .num-btn:active {
-            transform: translateY(0);
+        .calc-btn.number {
+            background: white;
+            box-shadow: 0 10px 10px rgba(0, 0, 0, 0.06);
         }
 
-        .num-btn.op {
+        .calc-btn.operator {
             background: #dbeafe;
-            color: #1e40af;
-            border-color: #bfdbfe;
+            color: #173e87;
         }
 
-        .num-btn.special {
+        .calc-btn.function {
             background: #e0e7ff;
-            color: #4338ca;
+            color: #173e87;
             font-size: 16px;
-            border-color: #c7d2fe;
+        }
+
+        .calc-btn.equals {
+            background: #173e87;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .calc-btn.zero {
+            grid-column: span 2;
         }
 
         .error {
@@ -318,27 +359,39 @@
             color: #3b82f6;
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 420px) {
             .app-container {
-                max-width: 100%;
-                border-radius: 24px;
+                border-radius: 20px;
             }
 
             .result-value {
-                font-size: 36px;
+                font-size: 28px;
             }
 
-            .action-grid {
-                grid-template-columns: 1fr;
+            .calc-btn {
+                font-size: 18px;
+                min-height: 56px;
+                padding: 16px 0;
             }
 
-            .numpad-grid {
+            .calc-grid {
                 gap: 8px;
             }
+        }
 
-            .num-btn {
-                padding: 14px;
-                font-size: 18px;
+        @media (max-height: 700px) {
+            .voice-card {
+                padding: 16px;
+            }
+
+            .voice-icon {
+                width: 36px;
+                height: 36px;
+            }
+
+            .calc-btn {
+                min-height: 52px;
+                padding: 14px 0;
             }
         }
     </style>
@@ -351,13 +404,13 @@
                 <h1>Retailers Calculator</h1>
                 <div class="header-badge">BETA</div>
             </div>
-            <p>Calculate your money, check totals - all for free!</p>
+            <p>Calculate sales, calculate profit, check totals - all for free!</p>
         </div>
 
         <div class="workspace">
             <div class="workspace-label">Your Calculation</div>
-            <input type="text" class="calculation-input" id="calcInput" placeholder="Type or speak your calculations..."
-                autocomplete="off">
+            <input type="text" class="calculation-input" id="calcInput" placeholder="Tap here to enter numbers..."
+                readonly>
 
             <div class="result-card">
                 <div class="result-label">TOTAL AMOUNT</div>
@@ -366,7 +419,7 @@
         </div>
 
         <div class="actions-section">
-            <div class="action-grid">
+            <div class="main-actions" id="mainActions">
                 <div class="action-card" id="clearBtn">
                     <div class="action-icon">🗑️</div>
                     <div class="action-label">Clear All</div>
@@ -374,10 +427,6 @@
                 <div class="action-card" id="calculateBtn">
                     <div class="action-icon">✅</div>
                     <div class="action-label">Calculate</div>
-                </div>
-                <div class="action-card" id="toggleNumpad">
-                    <div class="action-icon">⌨️</div>
-                    <div class="action-label" id="toggleLabel">Show Keypad</div>
                 </div>
             </div>
 
@@ -392,31 +441,39 @@
                 <div class="voice-subtitle">Say your calculation out loud</div>
             </div>
 
-            <div class="voice-status" id="voiceStatus">Tap the microphone make you talk your calculation</div>
+            <div class="voice-status" id="voiceStatus">Tap the microphone and say your calculations</div>
         </div>
 
-        <div class="numpad-section" id="numpadSection">
-            <div class="numpad-label">Quick Input</div>
-            <div class="numpad-grid">
-                <button class="num-btn" data-val="7">7</button>
-                <button class="num-btn" data-val="8">8</button>
-                <button class="num-btn" data-val="9">9</button>
-                <button class="num-btn op" data-val="/">÷</button>
+        <div class="calculator-section" id="calculatorSection">
+            <div class="calculator-header">
+                <div class="calc-title">⌨️ Enter Numbers</div>
+                <button class="close-calc-btn" id="closeCalcBtn">×</button>
+            </div>
 
-                <button class="num-btn" data-val="4">4</button>
-                <button class="num-btn" data-val="5">5</button>
-                <button class="num-btn" data-val="6">6</button>
-                <button class="num-btn op" data-val="*">×</button>
+            <div class="calc-grid">
+                <button class="calc-btn function" data-val="C">AC</button>
+                <button class="calc-btn function" data-val="back">⌫</button>
+                <button class="calc-btn operator" data-val="%">%</button>
+                <button class="calc-btn operator" data-val="/">÷</button>
 
-                <button class="num-btn" data-val="1">1</button>
-                <button class="num-btn" data-val="2">2</button>
-                <button class="num-btn" data-val="3">3</button>
-                <button class="num-btn op" data-val="-">-</button>
+                <button class="calc-btn number" data-val="7">7</button>
+                <button class="calc-btn number" data-val="8">8</button>
+                <button class="calc-btn number" data-val="9">9</button>
+                <button class="calc-btn operator" data-val="*">×</button>
 
-                <button class="num-btn" data-val="0">0</button>
-                <button class="num-btn" data-val=".">.</button>
-                <button class="num-btn special" data-val="%">%</button>
-                <button class="num-btn op" data-val="+">+</button>
+                <button class="calc-btn number" data-val="4">4</button>
+                <button class="calc-btn number" data-val="5">5</button>
+                <button class="calc-btn number" data-val="6">6</button>
+                <button class="calc-btn operator" data-val="-">−</button>
+
+                <button class="calc-btn number" data-val="1">1</button>
+                <button class="calc-btn number" data-val="2">2</button>
+                <button class="calc-btn number" data-val="3">3</button>
+                <button class="calc-btn operator" data-val="+">+</button>
+
+                <button class="calc-btn number zero" data-val="0">0</button>
+                <button class="calc-btn number" data-val=".">.</button>
+                <button class="calc-btn equals" data-val="=">=</button>
             </div>
         </div>
     </div>
@@ -424,58 +481,146 @@
     <script>
         class SalesAssistant {
             constructor() {
-                this.input = document.getElementById('calcInput');
+                this.calcInput = document.getElementById('calcInput');
                 this.result = document.getElementById('resultValue');
                 this.voiceCard = document.getElementById('voiceCard');
                 this.voiceTitle = document.getElementById('voiceTitle');
                 this.voiceStatus = document.getElementById('voiceStatus');
                 this.clearBtn = document.getElementById('clearBtn');
                 this.calculateBtn = document.getElementById('calculateBtn');
-                this.toggleNumpad = document.getElementById('toggleNumpad');
-                this.toggleLabel = document.getElementById('toggleLabel');
-                this.numpadSection = document.getElementById('numpadSection');
+                this.mainActions = document.getElementById('mainActions');
+                this.calculatorSection = document.getElementById('calculatorSection');
+                this.closeCalcBtn = document.getElementById('closeCalcBtn');
 
+                this.expression = '';
                 this.isListening = false;
                 this.recognition = null;
-                this.numpadVisible = false;
+                this.calcOpen = false;
 
                 this.initialize();
             }
 
             initialize() {
-                this.input.addEventListener('input', () => this.calculate());
-                this.input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.calculate();
-                });
+                // Input field triggers calculator
+                this.calcInput.addEventListener('click', () => this.openCalculator());
+                this.calcInput.addEventListener('focus', () => this.openCalculator());
 
                 this.clearBtn.addEventListener('click', () => this.clear());
                 this.calculateBtn.addEventListener('click', () => this.calculate());
+                this.closeCalcBtn.addEventListener('click', () => this.closeCalculator());
 
-                this.toggleNumpad.addEventListener('click', () => this.toggleKeypad());
-
-                document.querySelectorAll('.num-btn').forEach(btn => {
+                document.querySelectorAll('.calc-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const val = btn.dataset.val;
-                        this.input.value += val;
-                        this.input.focus();
-                        this.calculate();
+                        this.handleCalcInput(val);
                     });
                 });
 
                 this.initializeVoice();
             }
 
-            toggleKeypad() {
-                this.numpadVisible = !this.numpadVisible;
+            openCalculator() {
+                if (this.calcOpen) return;
 
-                if (this.numpadVisible) {
-                    this.numpadSection.classList.add('expanded');
-                    this.toggleLabel.textContent = 'Hide Keypad';
-                    this.toggleNumpad.classList.add('active');
+                this.calcOpen = true;
+                this.calculatorSection.classList.add('active');
+                this.mainActions.classList.add('hidden');
+
+                // Prevent device keyboard
+                this.calcInput.blur();
+            }
+
+            closeCalculator() {
+                this.calcOpen = false;
+                this.calculatorSection.classList.remove('active');
+                this.mainActions.classList.remove('hidden');
+            }
+
+            handleCalcInput(val) {
+                if (val === 'C') {
+                    this.expression = '';
+                } else if (val === 'back') {
+                    this.expression = this.expression.slice(0, -1);
+                } else if (val === '=') {
+                    this.calculate();
+                    return;
                 } else {
-                    this.numpadSection.classList.remove('expanded');
-                    this.toggleLabel.textContent = 'Show Keypad';
-                    this.toggleNumpad.classList.remove('active');
+                    this.expression += val;
+                }
+                this.updateDisplay();
+            }
+
+            updateDisplay() {
+                const displayExpr = this.expression
+                    .replace(/\*/g, '×')
+                    .replace(/\//g, '÷')
+                    .replace(/−/g, '-');
+
+                this.calcInput.value = displayExpr || '';
+
+                // Auto calculate as user types
+                if (this.expression) {
+                    try {
+                        const cleanExpr = this.expression
+                            .replace(/×/g, '*')
+                            .replace(/÷/g, '/')
+                            .replace(/−/g, '-');
+
+                        const calculated = math.evaluate(cleanExpr);
+                        const formatted = this.formatResult(calculated);
+                        this.result.textContent = '₦' + this.formatNumber(formatted);
+                        this.result.className = 'result-value';
+                    } catch (e) {
+                        // Don't show error while typing
+                    }
+                } else {
+                    this.result.textContent = '₦0';
+                }
+            }
+
+            calculate() {
+                if (!this.expression) {
+                    return;
+                }
+
+                try {
+                    const cleanExpr = this.expression
+                        .replace(/×/g, '*')
+                        .replace(/÷/g, '/')
+                        .replace(/−/g, '-');
+
+                    const calculated = math.evaluate(cleanExpr);
+                    const formatted = this.formatResult(calculated);
+
+                    this.result.textContent = '₦' + this.formatNumber(formatted);
+                    this.result.className = 'result-value';
+                } catch (error) {
+                    this.result.textContent = 'Invalid';
+                    this.result.className = 'result-value error';
+                }
+            }
+
+            formatResult(num) {
+                if (typeof num === 'number') {
+                    const result = Number.isInteger(num)
+                        ? num.toString()
+                        : num.toFixed(2).replace(/\.?0+$/, '');
+
+                    if (result.length > 12) {
+                        return parseFloat(result).toExponential(2);
+                    }
+                    return result;
+                }
+                return num.toString();
+            }
+
+            clear() {
+                this.expression = '';
+                this.calcInput.value = '';
+                this.result.textContent = '₦0';
+                this.result.className = 'result-value';
+                if (this.calcOpen) {
+                    this.closeCalculator();
                 }
             }
 
@@ -496,7 +641,7 @@
 
                     this.recognition.onresult = (event) => {
                         const transcript = event.results[0][0].transcript;
-                        this.voiceStatus.innerHTML = `<span class="transcript">You calculated: "${transcript}"</span>`;
+                        this.voiceStatus.innerHTML = `<span class="transcript">You talk: "${transcript}"</span>`;
                         this.processVoiceInput(transcript);
                     };
 
@@ -552,50 +697,9 @@
                     .replace(/[^\d+\-*/.%()]/g, '');
 
                 if (normalized) {
-                    this.input.value = normalized;
+                    this.expression = normalized;
+                    this.updateDisplay();
                     this.calculate();
-                }
-            }
-
-            clear() {
-                this.input.value = '';
-                this.result.textContent = '₦0';
-                this.input.focus();
-            }
-
-            calculate() {
-                const expr = this.input.value.trim();
-
-                if (!expr) {
-                    this.result.textContent = '₦0';
-                    return;
-                }
-
-                try {
-                    const cleanExpr = expr
-                        .replace(/×/g, '*')
-                        .replace(/÷/g, '/');
-
-                    const calculated = math.evaluate(cleanExpr);
-
-                    let value;
-                    if (typeof calculated === 'number') {
-                        value = Number.isInteger(calculated)
-                            ? calculated.toString()
-                            : calculated.toFixed(2).replace(/\.?0+$/, '');
-                    } else {
-                        value = calculated.toString();
-                    }
-
-                    if (value.length > 12) {
-                        value = parseFloat(value).toExponential(2);
-                    }
-
-                    this.result.textContent = '₦' + this.formatNumber(value);
-                    this.result.className = 'result-value';
-                } catch (error) {
-                    this.result.textContent = 'Invalid';
-                    this.result.className = 'result-value error';
                 }
             }
 
